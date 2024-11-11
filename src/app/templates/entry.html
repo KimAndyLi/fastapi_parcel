@@ -1,0 +1,13 @@
+{%extends 'base.html'%}
+{%block body%}
+
+<form method="post" action="/reg_parcel">
+    <input type="text" name="name" placeholder="Название посылки" required>
+    <input type="number" name="weight" placeholder="Вес в килограммах" step="0.01" required>
+    <input type="number" name="type_id" placeholder="Тип посылки (1, 2 или 3)" required>
+    <input type="number" name="value" placeholder="Стоимость в долларах" step="0.01" required>
+    <button type="submit">Зарегистрировать посылку</button>
+</form>
+    
+    {% endblock %}
+
