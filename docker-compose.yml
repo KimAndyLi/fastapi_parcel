@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=mysql+mysqlconnector://parcel:parcelpasswd@db/parceldb
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PYTHONPATH=/app/src
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpasswd
+      MYSQL_DATABASE: parceldb
+      MYSQL_USER: parcel
+      MYSQL_PASSWORD: parcelpasswd
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A src.app.celery_app.celery worker --loglevel=info
+    depends_on:
+      - redis
+      - db
+    environment:
+      - DATABASE_URL=mysql+mysqlconnector://parcel:parcelpasswd@db/parceldb
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PYTHONPATH=/app/src
+    working_dir: /app
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A src.app.celery_app.celery beat --loglevel=info
+    depends_on:
+      - redis
+      - db
+    environment:
+      - DATABASE_URL=mysql+mysqlconnector://parcel:parcelpasswd@db/parceldb
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PYTHONPATH=/app/src
+    working_dir: /app
+
+volumes:
+  mysql_data:
